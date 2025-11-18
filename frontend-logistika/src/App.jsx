@@ -262,6 +262,7 @@ function ProizvodiTab() {
 
 function DobavljaciTab() {
   const [dobavljaci, setDobavljaci] = useState([]);
+  const [proizvodi, setProizvodi] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -271,13 +272,22 @@ function DobavljaciTab() {
     naziv: '',
     kontakt: { email: '', telefon: '', osoba: '' },
     lokacija: { grad: '', drzava: '', adresa: '' },
+    certifikati: [],
     ocjena: 3,
     godina_osnivanja: '',
-    broj_zaposlenih: ''
+    broj_zaposlenih: '',
+    proizvodi_id: []
   });
+
+  // Za dodavanje certifikata
+  const [noviCertifikat, setNoviCertifikat] = useState('');
+  
+  // Za dodavanje proizvoda
+  const [selectedProizvod, setSelectedProizvod] = useState('');
 
   useEffect(() => {
     fetchDobavljaci();
+    fetchProizvodi();
   }, []);
 
   const fetchDobavljaci = async () => {
@@ -292,6 +302,15 @@ function DobavljaciTab() {
     }
   };
 
+  const fetchProizvodi = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/proizvodi`);
+      setProizvodi(response.data.proizvodi || []);
+    } catch (err) {
+      console.error('Greška pri dohvaćanju proizvoda:', err);
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes('.')) {
@@ -303,6 +322,66 @@ function DobavljaciTab() {
     } else {
       setFormData({ ...formData, [name]: value });
     }
+  };
+
+  // Dodaj certifikat
+  const handleAddCertifikat = () => {
+    if (!noviCertifikat.trim()) {
+      alert('Unesite naziv certifikata!');
+      return;
+    }
+    
+    if (formData.certifikati.includes(noviCertifikat.trim())) {
+      alert('Certifikat već postoji!');
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      certifikati: [...formData.certifikati, noviCertifikat.trim()]
+    });
+    setNoviCertifikat('');
+  };
+
+  // Ukloni certifikat
+  const handleRemoveCertifikat = (index) => {
+    setFormData({
+      ...formData,
+      certifikati: formData.certifikati.filter((_, i) => i !== index)
+    });
+  };
+
+  // Dodaj proizvod
+  const handleAddProizvod = () => {
+    if (!selectedProizvod) {
+      alert('Odaberite proizvod!');
+      return;
+    }
+
+    if (formData.proizvodi_id.includes(selectedProizvod)) {
+      alert('Proizvod već postoji u listi!');
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      proizvodi_id: [...formData.proizvodi_id, selectedProizvod]
+    });
+    setSelectedProizvod('');
+  };
+
+  // Ukloni proizvod
+  const handleRemoveProizvod = (proizvodId) => {
+    setFormData({
+      ...formData,
+      proizvodi_id: formData.proizvodi_id.filter(id => id !== proizvodId)
+    });
+  };
+
+  // Dohvati naziv proizvoda po ID-u
+  const getProizvodNaziv = (proizvodId) => {
+    const proizvod = proizvodi.find(p => p._id === proizvodId);
+    return proizvod ? proizvod.naziv : 'N/A';
   };
 
   const handleCreate = async (e) => {
@@ -353,9 +432,11 @@ function DobavljaciTab() {
         drzava: d.lokacija?.drzava || '',
         adresa: d.lokacija?.adresa || ''
       },
+      certifikati: d.certifikati || [],
       ocjena: d.ocjena || 3,
       godina_osnivanja: d.godina_osnivanja || '',
-      broj_zaposlenih: d.broj_zaposlenih || ''
+      broj_zaposlenih: d.broj_zaposlenih || '',
+      proizvodi_id: d.proizvodi_id || []
     });
     setCurrentId(d._id);
     setEditMode(true);
@@ -367,10 +448,14 @@ function DobavljaciTab() {
       naziv: '',
       kontakt: { email: '', telefon: '', osoba: '' },
       lokacija: { grad: '', drzava: '', adresa: '' },
+      certifikati: [],
       ocjena: 3,
       godina_osnivanja: '',
-      broj_zaposlenih: ''
+      broj_zaposlenih: '',
+      proizvodi_id: []
     });
+    setNoviCertifikat('');
+    setSelectedProizvod('');
     setCurrentId(null);
     setEditMode(false);
     setShowForm(false);
@@ -422,6 +507,89 @@ function DobavljaciTab() {
           <input type="number" step="0.1" name="ocjena" placeholder="Ocjena (1-5)" 
             min="1" max="5" value={formData.ocjena} onChange={handleInputChange} />
 
+          <h4 className="form-section-title">Certifikati</h4>
+
+          {/* Lista certifikata */}
+          {formData.certifikati.length > 0 && (
+            <div className="tags-list">
+              {formData.certifikati.map((cert, index) => (
+                <span key={index} className="tag">
+                  {cert}
+                  <button 
+                    type="button" 
+                    className="tag-remove"
+                    onClick={() => handleRemoveCertifikat(index)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Forma za dodavanje certifikata */}
+          <div className="add-item-section">
+            <div className="form-row">
+              <input 
+                type="text" 
+                placeholder="Naziv certifikata (npr. ISO 9001)"
+                value={noviCertifikat}
+                onChange={(e) => setNoviCertifikat(e.target.value)}
+              />
+              <button 
+                type="button" 
+                className="btn btn-success"
+                onClick={handleAddCertifikat}
+              >
+                Dodaj certifikat
+              </button>
+            </div>
+          </div>
+
+          <h4 className="form-section-title">Proizvodi dobavljača</h4>
+
+          {/* Lista proizvoda */}
+          {formData.proizvodi_id.length > 0 && (
+            <div className="proizvodi-lista-small">
+              {formData.proizvodi_id.map((pId, index) => (
+                <div key={index} className="proizvod-item">
+                  <span>{getProizvodNaziv(pId)}</span>
+                  <button 
+                    type="button" 
+                    className="btn btn-delete btn-small"
+                    onClick={() => handleRemoveProizvod(pId)}
+                  >
+                    Ukloni
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Forma za dodavanje proizvoda */}
+          <div className="add-item-section">
+            <div className="form-row">
+              <select 
+                value={selectedProizvod} 
+                onChange={(e) => setSelectedProizvod(e.target.value)}
+              >
+                <option value="">-- Odaberi proizvod --</option>
+                {proizvodi.map(p => (
+                  <option key={p._id} value={p._id}>
+                    {p.naziv}
+                  </option>
+                ))}
+              </select>
+              <button 
+                type="button" 
+                className="btn btn-success"
+                onClick={handleAddProizvod}
+              >
+                Dodaj proizvod
+              </button>
+            </div>
+          </div>
+
           <div className="form-actions">
             <button type="submit" className="btn btn-success">
               {editMode ? 'Spremi' : 'Dodaj'}
@@ -450,6 +618,8 @@ function DobavljaciTab() {
                   <th>Telefon</th>
                   <th>Grad</th>
                   <th>Država</th>
+                  <th>Certifikati</th>
+                  <th>Broj proizvoda</th>
                   <th>Ocjena</th>
                   <th>Akcije</th>
                 </tr>
@@ -463,6 +633,8 @@ function DobavljaciTab() {
                     <td>{d.kontakt?.telefon || 'N/A'}</td>
                     <td>{d.lokacija?.grad || 'N/A'}</td>
                     <td>{d.lokacija?.drzava || 'N/A'}</td>
+                    <td>{d.certifikati?.length || 0}</td>
+                    <td>{d.proizvodi_id?.length || 0}</td>
                     <td>{d.ocjena || 'N/A'}/5</td>
                     <td className="actions">
                       <button className="btn btn-edit" onClick={() => handleEdit(d)}>Uredi</button>
@@ -479,9 +651,6 @@ function DobavljaciTab() {
   );
 }
 
-// ==========================================
-// KOMPONENTA: POŠILJKE - PUNI CRUD + PROIZVODI
-// ==========================================
 function PosiljkeTab() {
   const [posiljke, setPosiljke] = useState([]);
   const [proizvodi, setProizvodi] = useState([]); // Lista svih proizvoda
@@ -881,6 +1050,7 @@ function PosiljkeTab() {
 
 function SkladistaTab() {
   const [skladista, setSkladista] = useState([]);
+  const [proizvodi, setProizvodi] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -892,11 +1062,18 @@ function SkladistaTab() {
     kapacitet_paleta: '',
     zauzetost_postotak: '',
     trenutna_popunjenost_m3: '',
-    status: 'Aktivno'
+    status: 'Aktivno',
+    inventar: []
   });
+
+  // Za dodavanje u inventar
+  const [selectedProizvod, setSelectedProizvod] = useState('');
+  const [selectedKolicina, setSelectedKolicina] = useState(1);
+  const [selectedDatum, setSelectedDatum] = useState('');
 
   useEffect(() => {
     fetchSkladista();
+    fetchProizvodi();
   }, []);
 
   const fetchSkladista = async () => {
@@ -908,6 +1085,15 @@ function SkladistaTab() {
       alert('Greška: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProizvodi = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/proizvodi`);
+      setProizvodi(response.data.proizvodi || []);
+    } catch (err) {
+      console.error('Greška pri dohvaćanju proizvoda:', err);
     }
   };
 
@@ -924,14 +1110,57 @@ function SkladistaTab() {
     }
   };
 
+  // Dodaj proizvod u inventar
+  const handleAddInventar = () => {
+    if (!selectedProizvod || selectedKolicina <= 0) {
+      alert('Odaberite proizvod i unesite količinu!');
+      return;
+    }
+
+    const postojiProizvod = formData.inventar.find(
+      item => item.proizvod_id === selectedProizvod
+    );
+
+    if (postojiProizvod) {
+      alert('Proizvod već postoji u inventaru! Možete ga urediti.');
+      return;
+    }
+
+    const noviItem = {
+      proizvod_id: selectedProizvod,
+      kolicina: parseInt(selectedKolicina),
+      datum_zadnje_nabave: selectedDatum || new Date().toISOString().split('T')[0]
+    };
+
+    setFormData({
+      ...formData,
+      inventar: [...formData.inventar, noviItem]
+    });
+
+    // Reset
+    setSelectedProizvod('');
+    setSelectedKolicina(1);
+    setSelectedDatum('');
+  };
+
+  // Ukloni proizvod iz inventara
+  const handleRemoveInventar = (proizvodId) => {
+    setFormData({
+      ...formData,
+      inventar: formData.inventar.filter(item => item.proizvod_id !== proizvodId)
+    });
+  };
+
+  // Dohvati naziv proizvoda po ID-u
+  const getProizvodNaziv = (proizvodId) => {
+    const proizvod = proizvodi.find(p => p._id === proizvodId);
+    return proizvod ? proizvod.naziv : 'N/A';
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const payload = {
-        ...formData,
-        inventar: [] // Prazan inventar za početak
-      };
-      await axios.post(`${API_BASE_URL}/skladista`, payload);
+      await axios.post(`${API_BASE_URL}/skladista`, formData);
       fetchSkladista();
       resetForm();
       alert('Skladište uspješno dodano!');
@@ -973,7 +1202,8 @@ function SkladistaTab() {
       kapacitet_paleta: s.kapacitet_paleta || '',
       zauzetost_postotak: s.zauzetost_postotak || '',
       trenutna_popunjenost_m3: s.trenutna_popunjenost_m3 || '',
-      status: s.status || 'Aktivno'
+      status: s.status || 'Aktivno',
+      inventar: s.inventar || []
     });
     setCurrentId(s._id);
     setEditMode(true);
@@ -987,8 +1217,12 @@ function SkladistaTab() {
       kapacitet_paleta: '',
       zauzetost_postotak: '',
       trenutna_popunjenost_m3: '',
-      status: 'Aktivno'
+      status: 'Aktivno',
+      inventar: []
     });
+    setSelectedProizvod('');
+    setSelectedKolicina(1);
+    setSelectedDatum('');
     setCurrentId(null);
     setEditMode(false);
     setShowForm(false);
@@ -1035,6 +1269,83 @@ function SkladistaTab() {
             </select>
           </div>
 
+          <h4 className="form-section-title">Inventar skladišta</h4>
+
+          {/* Lista inventara */}
+          {formData.inventar.length > 0 && (
+            <div className="proizvodi-lista">
+              <table className="mini-table">
+                <thead>
+                  <tr>
+                    <th>Proizvod</th>
+                    <th>Količina</th>
+                    <th>Datum zadnje nabave</th>
+                    <th>Akcija</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.inventar.map((item, index) => (
+                    <tr key={index}>
+                      <td>{getProizvodNaziv(item.proizvod_id)}</td>
+                      <td>{item.kolicina}</td>
+                      <td>{item.datum_zadnje_nabave ? new Date(item.datum_zadnje_nabave).toLocaleDateString('hr-HR') : 'N/A'}</td>
+                      <td>
+                        <button 
+                          type="button" 
+                          className="btn btn-delete btn-small"
+                          onClick={() => handleRemoveInventar(item.proizvod_id)}
+                        >
+                          Ukloni
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Forma za dodavanje u inventar */}
+          <div className="add-proizvod-section">
+            <div className="form-row">
+              <select 
+                value={selectedProizvod} 
+                onChange={(e) => setSelectedProizvod(e.target.value)}
+              >
+                <option value="">-- Odaberi proizvod --</option>
+                {proizvodi.map(p => (
+                  <option key={p._id} value={p._id}>
+                    {p.naziv}
+                  </option>
+                ))}
+              </select>
+              
+              <input 
+                type="number" 
+                min="1" 
+                placeholder="Količina"
+                value={selectedKolicina}
+                onChange={(e) => setSelectedKolicina(e.target.value)}
+              />
+            </div>
+
+            <input 
+              type="date" 
+              placeholder="Datum zadnje nabave"
+              value={selectedDatum}
+              onChange={(e) => setSelectedDatum(e.target.value)}
+            />
+            
+            <button 
+              type="button" 
+              className="btn btn-success"
+              onClick={handleAddInventar}
+              style={{marginTop: '10px'}}
+            >
+              Dodaj u inventar
+            </button>
+          </div>
+
           <div className="form-actions">
             <button type="submit" className="btn btn-success">
               {editMode ? 'Spremi' : 'Dodaj'}
@@ -1062,6 +1373,7 @@ function SkladistaTab() {
                   <th>Kapacitet paleta</th>
                   <th>Zauzetost</th>
                   <th>Status</th>
+                  <th>Broj proizvoda</th>
                   <th>Akcije</th>
                 </tr>
               </thead>
@@ -1073,6 +1385,7 @@ function SkladistaTab() {
                     <td>{s.kapacitet_paleta}</td>
                     <td>{s.zauzetost_postotak}%</td>
                     <td>{s.status}</td>
+                    <td>{s.inventar?.length || 0}</td>
                     <td className="actions">
                       <button className="btn btn-edit" onClick={() => handleEdit(s)}>Uredi</button>
                       <button className="btn btn-delete" onClick={() => handleDelete(s._id)}>Obriši</button>

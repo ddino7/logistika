@@ -365,6 +365,84 @@ footer {
   min-width: 60px;
 }
 
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.tag-remove {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.tag-remove:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.add-item-section {
+  background: #f0f4ff;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 2px dashed #667eea;
+}
+
+.add-item-section .form-row {
+  margin-bottom: 0;
+}
+
+.proizvodi-lista-small {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+}
+
+.proizvod-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.proizvod-item span {
+  font-weight: 500;
+  color: #374151;
+}
 
 /*responzivnost*/
 @media (max-width: 768px) {
@@ -430,6 +508,25 @@ footer {
   .btn-delete {
     width: 100%;
     min-width: unset;
+  }
+
+    .tags-list {
+    gap: 8px;
+  }
+
+  .tag {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .proizvod-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .proizvod-item button {
+    width: 100%;
   }
 }
 
